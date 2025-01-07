@@ -6,19 +6,7 @@ import APIResponse from "../utils/APIResponse.js";
 
 const registerUser = asyncHandler(async (req, res) => {
   // get user data from frontend
-  // validation
-  // check if user already exists
-  // check for images
-  // upload images to cloudinary
-  // check images uploaded successfully on cloudinary
-  // create user object in db - create entry in db
-  // check if user is created in db
-  // remove password and refresh token field from response
-  // if db created successfully, return response
-
-  // get user data from frontend
   const { username, email, fullname, password } = req.body;
-  console.log(username, email, fullname, password);
 
   // validation
   if (
@@ -28,17 +16,25 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   // check if user already exists
-  const existedUser = User.findOne({ $or: [{ username }, { email }] });
+  const existedUser = await User.findOne({ $or: [{ username }, { email }] });
   if (existedUser) {
     throw new APIError(409, "User with this username or email already exists");
   }
 
   // check for images
   const avatarLocalPath = req.files?.avatar[0]?.path;
-  const coverImageLocalPath = req.files?.coverImage[0]?.path;
+  let coverImageLocalPath = "";
 
   if (!avatarLocalPath) {
     throw new APIError(400, "Avatar file is required");
+  }
+
+  if (
+    req.files &&
+    Array.isArray(req.files.coverImage) &&
+    req.files.coverImage.length > 0
+  ) {
+    coverImageLocalPath = req.files.coverImage[0].path;
   }
 
   // upload images to cloudinary
