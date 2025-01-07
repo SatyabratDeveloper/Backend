@@ -146,10 +146,31 @@ const loginUser = asyncHandler(async (req, res) => {
     .cookie("accessToken", accessToken, options)
     .cookie("refreshToken", refreshToken, options)
     .json(
-      200,
-      { user: loggedInUser, accessToken, refreshToken },
-      "User logged in successfully"
+      new APIResponse(
+        200,
+        { user: loggedInUser, accessToken, refreshToken },
+        "User logged in successfully"
+      )
     );
 });
 
-export { registerUser, loginUser };
+const logoutUser = asyncHandler(async (req, res) => {
+  User.findByIdAndUpdate(
+    req.user._id,
+    { $set: { refreshToken: undefined } },
+    { new: true }
+  );
+
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+
+  res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new APIResponse(200, {}, "User logged out successfully"));
+});
+
+export { registerUser, loginUser, logoutUser };
