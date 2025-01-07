@@ -71,4 +71,85 @@ const registerUser = asyncHandler(async (req, res) => {
     .json(new APIResponse(200, createdUser, "User registered successfully"));
 });
 
-export default registerUser;
+const generateAccessAndRefreshToken = async (userId) => {
+  try {
+    // find the user by its id
+    const user = await User.findById(userId);
+
+    // generate access and refresh token
+    const accessToken = user.generateAccessToken();
+    const refreshToken = user.generateRefreshToken();
+
+    // save the refreshToken to DB
+    user.refreshToken = refreshToken;
+    await user.save({ validateBeforeSave: false });
+
+    return { accessToken, refreshToken };
+  } catch (error) {
+    throw new APIError(
+      500,
+      "Something went wrong, while generating access and refresh token"
+    );
+  }
+};
+
+const loginUser = asyncHandler(async (req, res) => {
+  // get user data from frontend
+  const { username, email, password } = req.body;
+  console.log("username:", username, "email:", email, "password", password);
+
+  // validation
+  if (!username || !email) {
+    throw new APIError(400, "Username or Email is required");
+  }
+
+  if (!password) {
+    throw new APIError(400, "Password is required");
+  }
+
+  // query to mongoDB with the username or email, if user not found throw error
+  const user = await User.findOne({ $or: [{ username }, { email }] });
+
+  if (!user) {
+    throw new APIError(
+      404,
+      "User not found with this username or email. Please try again with correct username or email."
+    );
+  }
+
+  // check password, if password is incorrect throw error
+  const isPasswordValid = user.isPasswordCorrect(password);
+
+  if (!isPasswordValid) {
+    throw new APIError(401, "Password is invalid.");
+  }
+
+  // generate access and refresh token
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+    user._id
+  );
+
+  // update user because refresh token is not update here in user
+  // we can query in DB or update the user object to update refresh token
+  const loggedInUser = await User.findById(user._id).select(
+    "-password -refreshToken"
+  );
+
+  // send cookies and return response
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+      200,
+      { user: loggedInUser, accessToken, refreshToken },
+      "User logged in successfully"
+    );
+});
+
+export { registerUser, loginUser };
