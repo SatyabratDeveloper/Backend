@@ -26,7 +26,7 @@ const verifyJWT = asyncHandler(async (req, res, next) => {
       throw new APIError(401, "Invalid access token");
     }
 
-    // add user to req
+    // add user to req - it will be available if user is logged in
     req.user = user;
     next();
   } catch (error) {
