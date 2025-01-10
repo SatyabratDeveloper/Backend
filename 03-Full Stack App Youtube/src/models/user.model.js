@@ -49,6 +49,7 @@ const userSchema = new Schema(
   { timestamps: true }
 );
 
+// mongoose hooks
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
 
@@ -56,11 +57,13 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
+// mongoose custom hooks using methods
 userSchema.methods.isPasswordCorrect = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
 
 userSchema.methods.generateAccessToken = function () {
+  // jwt is use to encrypt and decrypt tokens
   return jwt.sign(
     {
       _id: this._id,

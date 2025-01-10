@@ -19,13 +19,13 @@ const router = Router();
 
 // routes
 router.route("/register").post(
+  // multer middleware to upload files
   upload.fields([
     { name: "avatar", maxCount: 1 },
     { name: "coverImage", maxCount: 1 },
   ]),
   registerUser
 );
-
 router.route("/login").post(loginUser);
 
 // secured routes
