@@ -158,7 +158,7 @@ const loginUser = asyncHandler(async (req, res) => {
 const logoutUser = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(
     req.user?._id,
-    { $set: { refreshToken: undefined } },
+    { $unset: { refreshToken: 1 } },
     { new: true }
   );
 
@@ -193,7 +193,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       throw new APIError(401, "Invalid refresh token");
     }
 
-    if (decodedRefreshToken !== user?.refreshToken) {
+    if (refreshTokenReceived !== user?.refreshToken) {
       throw new APIError(401, "Refresh token is expired");
     }
 
